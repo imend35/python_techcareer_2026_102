@@ -219,10 +219,14 @@ python main_all.py
 
 Üretilen öneriler otomatik olarak aşağıdaki dosyaya kaydedilmektedir:
 
+Tek Kullanıcı için main.py dosyası çalıştırıldığında : 
 ```text
 outputs/recommendations.csv
 ```
-
+Tüm Kullanıcılar için main_all.py dosyası çalıştırıldığında : 
+```text
+outputs/recommendations_all.csv
+```
 ---
 
 # 🎯 Projenin Öne Çıkan Özellikleri
