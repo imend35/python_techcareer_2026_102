@@ -1,0 +1,6 @@
+item_id,recommendation_score,title,category,type,year
+102,5.0,Interstellar,Bilim Kurgu,Film,2014
+104,5.0,Inception,Bilim Kurgu,Film,2010
+110,5.0,Avatar,Bilim Kurgu,Film,2009
+113,5.0,Neuromancer,Siberpunk,Kitap,1984
+115,4.744751113618412,The Martian,Bilim Kurgu,Film,2015
