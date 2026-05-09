@@ -1,0 +1,112 @@
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+from project.film_kitap_oneri_sistemi.src.recommender import recommend_items_for_user
+
+
+def create_user_item_matrix_all(ratings_df):
+
+    print("\n" + "=" * 50)
+    print("USER-ITEM MATRIX OLUSTURMA ASAMASI")
+    print("=" * 50)
+
+    # Bu matrisi oluşturdum çünkü recommendation system algoritmaları
+    # kullanıcı davranışlarını matris yapısında daha kolay analiz edebiliyor.
+    # Satırlarda kullanıcılar, sütunlarda içerikler yer alacak.
+    user_item_matrix = ratings_df.pivot_table(
+        index="user_id",
+        columns="item_id",
+        values="rating"
+    )
+
+    # Boş kalan hücreleri 0 ile doldurdum çünkü bu kullanıcıların
+    # ilgili içeriğe henüz puan vermediğini gösteriyor.
+    # Ayrıca cosine similarity hesaplamasında NaN değerlerle uğraşmamı engelliyor.
+    user_item_matrix = user_item_matrix.fillna(0)
+
+    # Oluşturulan matrisin boyutunu kontrol ettim çünkü
+    # kullanıcı ve içerik sayısının doğru oluştuğundan emin olmak istiyorum.
+    print(f"\nMatrix Boyutu: {user_item_matrix.shape}")
+
+    # İlk birkaç satırı görüntüledim çünkü pivot işleminin
+    # beklediğim şekilde çalışıp çalışmadığını doğrulamak istedim.
+    print("\nUser Item Matrix:")
+    print(user_item_matrix.head())
+
+    return user_item_matrix
+
+def calculate_user_similarity_all(user_item_matrix):
+
+    print("\n" + "=" * 50)
+    print("KULLANICI BENZERLIK HESAPLAMA ASAMASI")
+    print("=" * 50)
+
+    # Bu adımda cosine similarity kullandım çünkü kullanıcıların puanlama davranışlarının yön olarak birbirine ne kadar benzediğini ölçmek istiyorum.
+    # Yani amaç sadece aynı puanı vermeleri değil, genel tercih eğilimlerinin benzemesi.
+    similarity_scores = cosine_similarity(user_item_matrix)
+
+    # Cosine similarity sonucu numpy array olarak döndüğü için bunu DataFrame'e çevirdim.
+    # Böylece satır ve sütunlarda user_id değerlerini görerek sonucu daha okunabilir hale getirdim.
+    user_similarity_df = pd.DataFrame(
+        similarity_scores,
+        index=user_item_matrix.index,
+        columns=user_item_matrix.index
+    )
+
+    # Benzerlik matrisinin boyutunu kontrol ettim çünkü her kullanıcının
+    # diğer tüm kullanıcılarla karşılaştırıldığından emin olmak istiyorum.
+    print(f"\nBenzerlik Matrisi Boyutu: {user_similarity_df.shape}")
+
+    # İlk birkaç satırı yazdırarak kullanıcılar arası benzerlik skorlarını kontrol ettim.
+    print("\nKullanıcı Benzerlik Matrisi:")
+    print(user_similarity_df.head())
+
+    return user_similarity_df
+
+def recommend_for_all_users(
+    user_item_matrix,
+    user_similarity_df,
+    items_df,
+    top_n=5
+):
+
+    print("\n" + "="*50)
+    print("TUM KULLANICILAR ICIN ONERI URETME ASAMASI")
+    print("="*50)
+
+    all_recommendations = []
+
+    # Tüm kullanıcıları tek tek dolaşıyorum çünkü her kullanıcı için ayrı öneri üretmek istiyorum.
+    for user_id in user_item_matrix.index:
+
+        print(f"\nUser {user_id} icin oneriler hazirlaniyor...")
+
+        # Burada tek kullanıcı için öneri üreten fonksiyonu çağırıyorum.
+        # Eğer burada tekrar recommend_for_all_users çağırırsam fonksiyon kendi kendini çağırır ve sonsuz döngü oluşur.
+        user_recommendations = recommend_items_for_user(
+            target_user_id=user_id,
+            user_item_matrix=user_item_matrix,
+            user_similarity_df=user_similarity_df,
+            items_df=items_df,
+            top_n=top_n
+        )
+
+        if not user_recommendations.empty:
+
+            # Sonuç tablosunda hangi önerinin hangi kullanıcıya ait olduğunu görebilmek için user_id ekliyorum.
+            user_recommendations["user_id"] = user_id
+
+            all_recommendations.append(user_recommendations)
+
+    if len(all_recommendations) > 0:
+
+        final_recommendations = pd.concat(
+            all_recommendations,
+            ignore_index=True
+        )
+
+        print("\nTum kullanicilar icin oneriler hazirlandi.")
+
+        return final_recommendations
+
+    return pd.DataFrame()
